@@ -1,5 +1,3 @@
-# api.py
-
 import os
 import cv2
 import numpy as np
@@ -11,11 +9,10 @@ from fastapi.responses import JSONResponse
 from src.pipeline import run_anpr
 
 # ============================================================
-# API KEY CONFIG (ENV VAR)
+# API KEY CONFIG
 # ============================================================
 
 API_KEY = os.getenv("FACE_API_KEY")
-API_KEY_HEADER = "X-API-Key"
 
 def verify_api_key(x_api_key: str = Header(...)):
     if API_KEY is None:
@@ -36,7 +33,7 @@ def verify_api_key(x_api_key: str = Header(...)):
 app = FastAPI(
     title="VNPR / ANPR API",
     description="Vehicle Number Plate Recognition Service",
-    version="v1"
+    version="v2"
 )
 
 # ============================================================
@@ -51,7 +48,19 @@ def health():
     }
 
 # ============================================================
-# ANPR ENDPOINT
+# CONFIDENCE LABEL LOGIC
+# ============================================================
+
+def get_confidence_level(similarity: float):
+    if similarity >= 95:
+        return "HIGH"
+    elif similarity >= 80:
+        return "MEDIUM"
+    else:
+        return "LOW"
+
+# ============================================================
+# MAIN ANPR ENDPOINT
 # ============================================================
 
 @app.post("/anpr")
@@ -61,6 +70,7 @@ async def anpr_api(
     _: None = Depends(verify_api_key)
 ):
     try:
+        # Read uploaded image
         contents = await image.read()
         np_img = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
@@ -68,20 +78,53 @@ async def anpr_api(
         if img is None:
             raise ValueError("Invalid image file")
 
+        # Run pipeline
         results = run_anpr(
             image=img,
             assigned_vehicle_number=assigned_vehicle_number
         )
 
+        # If nothing detected
+        if not results or len(results) == 0:
+            return JSONResponse(content={
+                "matched": False,
+                "assigned_vehicle_number": assigned_vehicle_number,
+                "recognized_vehicle_number": None,
+                "similarity": 0.0,
+                "verdict": "NO_PLATE_DETECTED",
+                "confidence_level": "LOW"
+            })
+
+        # Take best result
+        best = results[0]
+
+        # Extract values safely
+        recognized = (
+            best.get("final_vehicle_number")
+            or best.get("recognized")
+            or best.get("plate")
+            or best.get("recognized_vehicle_number")
+        )
+
+        similarity = float(best.get("similarity", 0))
+        verdict = best.get("verdict", "UNKNOWN")
+
+        matched = verdict == "MATCH"
+
         return JSONResponse(content={
-            "plates_detected": len(results),
-            "results": results
+            "matched": matched,
+            "assigned_vehicle_number": assigned_vehicle_number,
+            "recognized_vehicle_number": recognized,
+            "similarity": similarity,
+            "verdict": verdict,
+            "confidence_level": get_confidence_level(similarity)
         })
 
     except Exception as e:
         return JSONResponse(
             status_code=500,
             content={
+                "matched": False,
                 "error": str(e)
             }
         )
