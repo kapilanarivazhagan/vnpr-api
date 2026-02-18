@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+
+torch==2.0.1
+torchvision==0.15.2
+
+ultralytics
+opencv-python
+numpy<2
+pillow
+
+rapidfuzz
+python-multipart
+pip install -r requirements.txt
