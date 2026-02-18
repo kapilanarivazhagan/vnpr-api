@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from typing import Optional
 
-from fastapi import FastAPI, UploadFile, File, Header, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, Header, HTTPException, Depends, Form
 from fastapi.responses import JSONResponse
 
 from src.pipeline import run_anpr
@@ -66,7 +66,7 @@ def get_confidence_level(similarity: float):
 @app.post("/anpr")
 async def anpr_api(
     image: UploadFile = File(...),
-    assigned_vehicle_number: Optional[str] = None,
+    assigned_vehicle_number: Optional[str] = Form(None),  # <-- IMPORTANT FIX
     _: None = Depends(verify_api_key)
 ):
     try:
@@ -98,7 +98,7 @@ async def anpr_api(
         # Take best result
         best = results[0]
 
-        # Extract values safely
+        # Extract detected plate text safely
         recognized = (
             best.get("final_vehicle_number")
             or best.get("recognized")
