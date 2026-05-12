@@ -1,35 +1,60 @@
-# VNPR – Deployment Notes
+# Vehicle Number Plate Recognition & Verification API
+
+A FastAPI-based ANPR (Automatic Number Plate Recognition) system designed for vehicle identity verification, OCR-based plate recognition, and operational validation workflows.
+
+---
 
 ## Overview
-- Vehicle Number Plate Recognition (ANPR) service
-- End-to-end pipeline: detection → OCR → grammar → verification
-- Exposed via FastAPI
+
+This project provides an API for detecting and recognizing vehicle number plates from uploaded images while validating recognized plates against assigned vehicle identities.
+
+The system is designed for operational verification workflows, fraud prevention, and vehicle identity validation use cases.
+
+---
+
+## Key Features
+
+- Vehicle number plate recognition
+- OCR-based plate extraction
+- Vehicle identity verification
+- Similarity score validation
+- Confidence-level classification
+- FastAPI backend architecture
+- Secure API authentication
+- Operational verification workflows
+
+---
 
 ## Tech Stack
-- Python 3.9+
-- YOLO (Ultralytics) for plate & character detection
-- MobileNetV2 for character OCR
-- OpenCV for image handling
-- RapidFuzz for plate similarity matching
-- FastAPI + Uvicorn for API serving
 
-## Architecture
-- src/config.py       → constants & grammar rules
-- src/models.py       → model loading (YOLO, OCR)
-- src/ocr.py          → character-level OCR inference
-- src/utils.py        → geometric & structural helpers
-- src/postprocess.py → normalization, grammar, verification
-- src/pipeline.py    → full ANPR orchestration
-- vnpr.py             → local test runner
-- api.py              → FastAPI wrapper
+### Backend & APIs
+- FastAPI
+- Python
+- Uvicorn
 
-## Security
-- API key required via HTTP header
-- Header name: X-API-Key
-- API key loaded from environment variable:
-  FACE_API_KEY
+### Computer Vision & OCR
+- OpenCV
+- OCR Pipelines
+- NumPy
 
-## Local Run (API)
-```bash
-$env:FACE_API_KEY="my-test-key"
-uvicorn api:app --reload
+### Verification & Processing
+- Similarity Matching
+- Confidence Scoring
+- Validation Logic
+
+---
+
+## System Workflow
+
+```text
+Vehicle Image
+      ↓
+Plate Detection
+      ↓
+OCR Extraction
+      ↓
+Vehicle Number Recognition
+      ↓
+Similarity Validation
+      ↓
+Verification Decision
